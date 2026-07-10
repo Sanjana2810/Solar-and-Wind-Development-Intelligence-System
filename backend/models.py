@@ -1,4 +1,4 @@
-"""SQLAlchemy models — implements docs/database_design/schema.md as real tables."""
+
 import enum
 import uuid
 from datetime import datetime

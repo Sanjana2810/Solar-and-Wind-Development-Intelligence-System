@@ -1,4 +1,4 @@
-"""Pydantic schemas — API request/response contracts."""
+
 import uuid
 from datetime import datetime
 from typing import Optional

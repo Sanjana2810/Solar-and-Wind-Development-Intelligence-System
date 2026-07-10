@@ -1,4 +1,4 @@
-"""Environmental Data Collection Engine — pulls live data from NASA POWER."""
+
 import os
 from datetime import datetime, timedelta
 
