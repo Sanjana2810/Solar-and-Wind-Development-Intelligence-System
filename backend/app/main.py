@@ -1,54 +1,38 @@
-from fastapi import FastAPI, HTTPException, Form
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr
-from typing import Dict
 
-app = FastAPI()
+from .database import engine, Base
+from .routers import auth, projects, environmental, sites
+
+
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="Solar & Wind Deployment Intelligence API", version="1.0.0")
 
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-class Project(BaseModel):
-    name: str
-    region: str
-    description: str
-    status: str = "Prospecting"
-    latitude: float = 0.0
-    longitude: float = 0.0
-
-class UserCreate(BaseModel):
-    name: str
-    email: EmailStr
-    password: str
-    role: str
+app.include_router(auth.router)
+app.include_router(projects.router)
+app.include_router(environmental.router)
+app.include_router(sites.router)
 
 
-projects_db: Dict[str, dict] = {}
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Solar & Wind Deployment Intelligence API"}
 
 
-@app.post("/api/v1/auth/register")
-def register_user(user: UserCreate):
-    return {"message": "User registered successfully"}
-
-
-@app.post("/api/v1/auth/login")
-def login(username: str = Form(...), password: str = Form(...)):
-    
-    return {"access_token": "mock-token", "token_type": "bearer"}
-
-
-@app.get("/api/v1/projects")
-def get_projects():
-    return list(projects_db.values())
-
-@app.post("/api/v1/projects")
-def create_project(project: Project):
-    pid = f"PROJ-{len(projects_db) + 1}"
-    projects_db[pid] = {"id": pid, **project.dict()}
-    return {"message": "Project created", "id": pid}
+@app.on_event("startup")
+def startup_event():
+    print("--- REGISTERED ROUTES ---")
+    for route in app.routes:
+        if hasattr(route, "path"):
+            print(f"Path: {route.path} | Methods: {getattr(route, 'methods', None)}")
+    print("-------------------------")

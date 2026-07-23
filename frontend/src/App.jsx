@@ -14,47 +14,50 @@ export default function App() {
     setView("login");
   };
 
-  if (view === "login") {
+  try {
+    if (view === "login") {
+      return (
+        <Login 
+          onLoggedIn={() => setView("projects")} 
+          onRegisterClick={() => setView("register")} 
+        />
+      );
+    }
+    
+    if (view === "register") return <Register onRegistered={() => setView("login")} />;
+    if (view === "changePassword") return <ChangePassword onBack={() => setView("projects")} />;
+    
+    if (view === "projects") {
+      return (
+        <Projects
+          onOpenProject={(p) => {
+            setActiveProject(p);
+            setView("projectDetail");
+          }}
+          onLogout={logout}
+          onChangePassword={() => setView("changePassword")}
+        />
+      );
+    }
+
+    if (view === "projectDetail") {
+      return (
+        <ProjectDetail 
+          project={activeProject} 
+          onBack={() => setView("projects")} 
+        />
+      );
+    }
+  } catch (renderErr) {
+    console.error("Render crash caught in App.jsx:", renderErr);
     return (
-      <>
-        <Login onLoggedIn={() => setView("projects")} />
-        <p style={{ textAlign: "center" }}>
-          <button onClick={() => setView("register")}>Create an account</button>
-        </p>
-      </>
+      <div style={{ padding: 40, textAlign: "center", fontFamily: "sans-serif" }}>
+        <h3>Something went wrong rendering this view.</h3>
+        <button onClick={() => setView("projects")} style={{ marginTop: 10, padding: "8px 16px" }}>
+          Return to Projects
+        </button>
+      </div>
     );
-  }
-
-  if (view === "register") {
-    return (
-      <>
-        <Register onRegistered={() => setView("login")} />
-        <p style={{ textAlign: "center" }}>
-          <button onClick={() => setView("login")}>Back to login</button>
-        </p>
-      </>
-    );
-  }
-
-  if (view === "changePassword") {
-    return <ChangePassword onBack={() => setView("projects")} />;
-  }
-
-  if (view === "projects") {
-    return (
-      <Projects
-        onOpenProject={(p) => {
-          setActiveProject(p);
-          setView("projectDetail");
-        }}
-        onLogout={logout}
-        onChangePassword={() => setView("changePassword")}
-      />
-    );
-  }
-
-  if (view === "projectDetail") {
-    return <ProjectDetail project={activeProject} onBack={() => setView("projects")} />;
   }
 
   return null;
