@@ -7,9 +7,7 @@ NASA_POWER_BASE_URL = os.getenv(
 )
 
 def fetch_nasa_power_data(latitude: float, longitude: float, start_date: str, end_date: str) -> dict:
-    """
-    Fetches raw environmental data from the NASA POWER API.
-    """
+    
     params = {
         "parameters": "ALLSKY_SFC_SW_DWN,T2M,WS10M,PRECTOTCORR,CLOUD_AMT",
         "community": "RE",
@@ -29,10 +27,7 @@ def fetch_nasa_power_data(latitude: float, longitude: float, start_date: str, en
 
 
 def calculate_averages(payload: dict) -> dict:
-    """
-    Extracts the parameters from the NASA payload and calculates the average 
-    for each environmental metric, ignoring missing values (-999.0).
-    """
+    
     params_data = payload.get("properties", {}).get("parameter", {})
 
     def avg(param_key: str):

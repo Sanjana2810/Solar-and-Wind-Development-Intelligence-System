@@ -3,12 +3,7 @@ from shapely.geometry import Point
 import numpy as np
 
 def calculate_infrastructure_proximities(site_lat: float, site_lon: float) -> dict:
-    """
-    Simulates spatial proximity analysis using GeoPandas and Shapely.
-    Calculates distance to simulated infrastructure features (roads, transmission lines, water bodies)
-    and extracts local terrain/elevation indicators.
-    """
-   
+    
     site_point = Point(site_lon, site_lat)
     
     

@@ -1,10 +1,7 @@
 import numpy as np
 
 def predict_solar_potential(solar_irradiance: float, temperature: float, cloud_cover: float) -> dict:
-    """
-    Simulates an ML prediction model (e.g., XGBoost/Random Forest regressor) 
-    to estimate solar deployment metrics based on environmental inputs.
-    """
+
     if solar_irradiance is None:
         solar_irradiance = 5.0 
 
@@ -32,10 +29,7 @@ def predict_solar_potential(solar_irradiance: float, temperature: float, cloud_c
 
 
 def predict_wind_potential(wind_speed: float, elevation: float) -> dict:
-    """
-    Simulates a wind potential prediction model to estimate wind power density,
-    average speed, and expected annual energy production.
-    """
+    
     if wind_speed is None:
         wind_speed = 5.5 
 
@@ -55,5 +49,5 @@ def predict_wind_potential(wind_speed: float, elevation: float) -> dict:
         "air_density_kg_m3": round(air_density, 3),
         "turbulence_intensity": "Low-Moderate",
         "capacity_factor_pct": turbine_capacity_factor,
-        "expected_annual_energy_mwh": round(turbine_capacity_factor * 8.76 * 0.15, 2) # Scaled estimation
+        "expected_annual_energy_mwh": round(turbine_capacity_factor * 8.76 * 0.15, 2) 
     }
