@@ -1,29 +1,64 @@
-const BASE_URL = 'http://127.0.0.1:8000'; 
+import axios from 'axios';
 
-export const register = async (userData) => {
-    const response = await fetch(`${BASE_URL}/api/v1/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
-    });
-    if (!response.ok) throw new Error("Registration failed");
-    return await response.json();
+const API_BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
+api.register = async (userData) => {
+  const response = await api.post('/auth/register', userData);
+  return response.data;
 };
 
-export const login = async (email, password) => {
-    const formData = new URLSearchParams();
-    formData.append("username", email);
-    formData.append("password", password);
-
-    const response = await fetch(`${BASE_URL}/api/v1/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formData
-    });
-    
-    if (!response.ok) throw new Error("Login failed");
-    return await response.json();
+api.login = async (credentials) => {
+  const payload = {
+    email: credentials.username || credentials.email,
+    password: credentials.password
+  };
+  const response = await api.post('/auth/login', payload);
+  return response.data;
 };
 
-const api = { login, register }; 
+api.createProject = async (projectData) => {
+  const response = await api.post('/projects/', projectData);
+  return response.data;
+};
+
+api.getProjects = async () => {
+  const response = await api.get('/projects/');
+  return response.data;
+};
+
+api.deleteProject = async (projectId) => {
+  const response = await api.delete(`/projects/${projectId}`);
+  return response.data;
+};
+
+api.changePassword = async (current_password, new_password, token) => {
+  const response = await api.post(
+    '/auth/change-password',
+    { current_password, new_password },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data;
+};
+
 export default api;
