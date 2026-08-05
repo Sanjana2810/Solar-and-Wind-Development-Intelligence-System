@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+pydantic
+PyJWT
+python-multipart
+fpdf2
+requests
