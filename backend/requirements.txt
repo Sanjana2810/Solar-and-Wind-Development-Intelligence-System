@@ -1,3 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic
+PyJWT
+python-multipart
+fpdf2
+requests
 fastapi==0.110.0
 uvicorn==0.28.0
 sqlalchemy==2.0.28
