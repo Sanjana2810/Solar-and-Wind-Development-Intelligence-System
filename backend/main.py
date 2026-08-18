@@ -263,7 +263,7 @@ def _run_full_pipeline(req: "SiteCreateRequest"):
     solar = solar_potential(req.land_area_m2, profile)
     wind = wind_potential(DEFAULT_TURBINE_COUNT, profile)
     score = compute_site_score(profile, solar, wind, req.existing_infrastructure)
-    forecast = energy_forecast(solar, wind, score["recommended_technology"])
+    forecast = energy_forecast(solar, wind, score["recommended_technology"], profile)
     deployment = deployment_plan(req.land_area_m2, score["recommended_technology"], solar, wind)
     return profile, solar, wind, score, forecast, deployment
 
@@ -652,6 +652,30 @@ def dashboard_summary(user: dict = Depends(get_current_user)):
         ],
     }
 
+@app.get("/api/infrastructure-suggestion", tags=["2. Site Management"])
+def suggest_infrastructure(latitude: float, longitude: float, user: dict = Depends(get_current_user)):
+    profile = get_environmental_profile(latitude, longitude)
+    road = profile.distance_to_road_km
+    line = profile.distance_to_transmission_km
+    sub = profile.distance_to_substation_km
+
+    if sub <= 5 and road <= 3:
+        suggestion = "Road + Grid Access"
+    elif sub <= 5:
+        suggestion = "Substation Nearby"
+    elif line <= 5:
+        suggestion = "Grid Connection"
+    elif road <= 3:
+        suggestion = "Road Access"
+    else:
+        suggestion = ""
+
+    return {
+        "suggested_infrastructure": suggestion,
+        "distance_to_road_km": road,
+        "distance_to_transmission_km": line,
+        "distance_to_substation_km": sub,
+    }
 
 @app.get("/api/health", tags=["System"])
 def health():

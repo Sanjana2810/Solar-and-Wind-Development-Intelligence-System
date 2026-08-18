@@ -1,4 +1,3 @@
-
 import math
 from dataclasses import dataclass, asdict, field
 
@@ -8,34 +7,47 @@ NASA_POWER_URL = "https://power.larc.nasa.gov/api/temporal/climatology/point"
 OPEN_METEO_ELEVATION_URL = "https://api.open-meteo.com/v1/elevation"
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 
-
 _profile_cache: dict = {}
-
 
 @dataclass
 class EnvironmentalProfile:
     solar_irradiance_kwh_m2_day: float   
     peak_sun_hours: float
-    cloud_cover_pct: float              
-    avg_temperature_c: float             
-    annual_rainfall_mm: float            
-    avg_wind_speed_ms: float            
-    wind_direction_deg: float           
-    wind_direction_compass: str         
+    cloud_cover_pct: float          
+        
+    avg_temperature_c: float      
+     
+    annual_rainfall_mm: float      
+    
+    avg_wind_speed_ms: float      
+    
+    wind_direction_deg: float      
+    
+    wind_direction_compass: str     
+     
     wind_power_density_w_m2: float
+    monthly_solar_irradiance_kwh_m2_day: list
+  
+    monthly_wind_speed_hub_ms: list     
+        
     turbulence_intensity_pct: float
-    elevation_m: float                   
-    land_slope_deg: float              
-    land_cover_type: str                
-    distance_to_road_km: float           
-    distance_to_transmission_km: float   
-    distance_to_substation_km: float     
-    in_protected_zone: bool              
-    in_urban_area: bool                 
-    land_ownership: str                  
+    elevation_m: float        
+                        
+    land_slope_deg: float      
+               
+    land_cover_type: str      
+               
+    distance_to_road_km: float    
+      
+    distance_to_transmission_km: float  
+    distance_to_substation_km: float    
+    in_protected_zone: bool      
+       
+    in_urban_area: bool      
+                            
+    land_ownership: str      
+                            
     data_sources: dict = field(default_factory=dict)
-
-
 
 def _fetch_nasa_power(lat: float, lon: float) -> dict:
     params = {
@@ -56,7 +68,18 @@ def _fetch_nasa_power(lat: float, lon: float) -> dict:
         months = [v for k, v in values.items() if k != "ANN" and v not in (-999, None)]
         return (sum(months) / len(months)) if months else fallback
 
-    
+    def monthly(name):
+        values = param_data.get(name, {})
+
+        numeric_keys = [f"{m:02d}" for m in range(1, 13)]
+        numeric_result = [values.get(k) if values.get(k) not in (-999, None) else None for k in numeric_keys]
+        if any(v is not None for v in numeric_result):
+            return numeric_result
+
+        abbr_keys = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+        abbr_result = [values.get(k) if values.get(k) not in (-999, None) else None for k in abbr_keys]
+        return abbr_result
+
     wd_values = param_data.get("WD10M", {})
     wind_direction = wd_values.get("ANN") if wd_values.get("ANN") not in (-999, None) else None
 
@@ -67,8 +90,9 @@ def _fetch_nasa_power(lat: float, lon: float) -> dict:
         "wind_speed_10m": annual("WS10M", 4.0),
         "cloud_amt": annual("CLOUD_AMT", 40.0),
         "wind_direction_deg": wind_direction,
+        "solar_irradiance_monthly": monthly("ALLSKY_SFC_SW_DWN"),
+        "wind_speed_10m_monthly": monthly("WS10M"),
     }
-
 
 def _degrees_to_compass(deg) -> str:
     if deg is None:
@@ -77,7 +101,6 @@ def _degrees_to_compass(deg) -> str:
                   "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
     index = round(deg / 22.5) % 16
     return directions[index]
-
 
 def _fetch_elevation_and_slope(lat: float, lon: float):
     delta = 0.0045 
@@ -96,8 +119,6 @@ def _fetch_elevation_and_slope(lat: float, lon: float):
     slope_ns = math.degrees(math.atan(abs(north - south) / run_m)) if run_m else 0.0
     slope_ew = math.degrees(math.atan(abs(east - west) / run_m)) if run_m else 0.0
     return center, max(slope_ns, slope_ew)
-
-
 
 _LAND_COVER_MAP = {
     ("landuse", "forest"): "Forest/Woodland",
@@ -122,7 +143,6 @@ _LAND_COVER_MAP = {
     ("landuse", "retail"): "Urban/Developed",
 }
 
-
 def _overpass_query(lat: float, lon: float) -> list:
     query = f"""
     [out:json][timeout:25];
@@ -143,7 +163,6 @@ def _overpass_query(lat: float, lon: float) -> list:
     resp.raise_for_status()
     return resp.json().get("elements", [])
 
-
 def _haversine_km(lat1, lon1, lat2, lon2) -> float:
     R = 6371.0
     p1, p2 = math.radians(lat1), math.radians(lat2)
@@ -152,7 +171,6 @@ def _haversine_km(lat1, lon1, lat2, lon2) -> float:
     a = math.sin(dphi / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dlambda / 2) ** 2
     return 2 * R * math.asin(math.sqrt(a))
 
-
 def _element_latlon(el: dict):
     lat = el.get("lat")
     lon = el.get("lon")
@@ -160,7 +178,6 @@ def _element_latlon(el: dict):
         center = el.get("center") or {}
         lat, lon = center.get("lat"), center.get("lon")
     return lat, lon
-
 
 def _nearest_km(lat, lon, elements, predicate):
     best = None
@@ -174,7 +191,6 @@ def _nearest_km(lat, lon, elements, predicate):
         if best is None or d < best:
             best = d
     return best
-
 
 def _classify_land_cover(lat, lon, elements) -> str:
     best_dist, best_label = None, None
@@ -190,7 +206,6 @@ def _classify_land_cover(lat, lon, elements) -> str:
                     best_dist, best_label = d, label
     return best_label or "Unclassified/Open Land"
 
-
 def get_environmental_profile(lat: float, lon: float, land_ownership: str = "Private") -> EnvironmentalProfile:
     cache_key = (round(lat, 3), round(lon, 3))
     if cache_key in _profile_cache:
@@ -202,7 +217,7 @@ def get_environmental_profile(lat: float, lon: float, land_ownership: str = "Pri
 
     try:
         power = _fetch_nasa_power(lat, lon)
-        sources["Solar / Wind / Climate / Wind Direction"] = "NASA POWER API (live)"
+        sources["Solar / Wind / Climate / Wind Direction / Seasonal"] = "NASA POWER API (live)"
     except Exception:
         power = {
             "solar_irradiance": 3.0 + math.cos(math.radians(lat)) * 3.5,
@@ -211,13 +226,15 @@ def get_environmental_profile(lat: float, lon: float, land_ownership: str = "Pri
             "wind_speed_10m": 5.0,
             "cloud_amt": 40.0,
             "wind_direction_deg": None,
+            "solar_irradiance_monthly": [None] * 12,
+            "wind_speed_10m_monthly": [None] * 12,
         }
-        sources["Solar / Wind / Climate / Wind Direction"] = "NASA POWER API unavailable - latitude-based fallback estimate used"
+        sources["Solar / Wind / Climate / Wind Direction / Seasonal"] = "NASA POWER API unavailable - latitude-based fallback estimate used"
 
-  
+
     hub_wind_speed = power["wind_speed_10m"] * (80 / 10) ** 0.14
 
-   
+      
     try:
         elevation, slope = _fetch_elevation_and_slope(lat, lon)
         sources["Elevation / Slope"] = "Open-Meteo Elevation API (live, Copernicus DEM)"
@@ -256,6 +273,11 @@ def get_environmental_profile(lat: float, lon: float, land_ownership: str = "Pri
 
     wind_dir_deg = power.get("wind_direction_deg")
 
+    monthly_hub_wind = [
+        (v * (80 / 10) ** 0.14) if v is not None else None
+        for v in power.get("wind_speed_10m_monthly", [None] * 12)
+    ]
+
     profile = EnvironmentalProfile(
         solar_irradiance_kwh_m2_day=round(power["solar_irradiance"], 2),
         peak_sun_hours=round(power["solar_irradiance"] * 0.92, 2),
@@ -266,7 +288,10 @@ def get_environmental_profile(lat: float, lon: float, land_ownership: str = "Pri
         wind_direction_deg=round(wind_dir_deg, 1) if wind_dir_deg is not None else None,
         wind_direction_compass=_degrees_to_compass(wind_dir_deg),
         wind_power_density_w_m2=round(wind_power_density, 1),
-        turbulence_intensity_pct=12.0,  
+        monthly_solar_irradiance_kwh_m2_day=power.get("solar_irradiance_monthly", [None] * 12),
+        monthly_wind_speed_hub_ms=[round(v, 2) if v is not None else None for v in monthly_hub_wind],
+        turbulence_intensity_pct=12.0,
+
         elevation_m=round(elevation, 1),
         land_slope_deg=round(slope, 2),
         land_cover_type=land_cover,
@@ -281,7 +306,6 @@ def get_environmental_profile(lat: float, lon: float, land_ownership: str = "Pri
 
     _profile_cache[cache_key] = profile
     return profile
-
 
 def profile_to_dict(profile: EnvironmentalProfile) -> dict:
     return asdict(profile)
