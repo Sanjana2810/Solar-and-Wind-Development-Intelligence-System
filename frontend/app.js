@@ -5,6 +5,7 @@ let state = {
   user: JSON.parse(localStorage.getItem("swdi_user") || "null"),
 };
 
+
 async function api(path, { method = "GET", body, auth = true, query } = {}) {
   let url = API_BASE + path;
   if (query) url += "?" + new URLSearchParams(query).toString();
@@ -20,6 +21,7 @@ async function api(path, { method = "GET", body, auth = true, query } = {}) {
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch (networkErr) {
+   
     throw new Error(
       "Can't reach the backend server. Make sure it's running at " + API_BASE +
       " (check your backend terminal is still open and shows 'Application startup complete')."
@@ -31,6 +33,7 @@ async function api(path, { method = "GET", body, auth = true, query } = {}) {
     try {
       const errJson = await res.json();
       if (Array.isArray(errJson.detail)) {
+        
         detail = errJson.detail.map((d) => d.msg || JSON.stringify(d)).join("; ");
       } else if (typeof errJson.detail === "string") {
         detail = errJson.detail;
@@ -43,6 +46,7 @@ async function api(path, { method = "GET", body, auth = true, query } = {}) {
   const ct = res.headers.get("content-type") || "";
   return ct.includes("application/json") ? res.json() : res.text();
 }
+
 
 const authView = document.getElementById("auth-view");
 const appView = document.getElementById("app-view");
@@ -133,6 +137,7 @@ function showApp() {
   loadDashboard();
 }
 
+
 function categoryClass(cat) {
   return {
     "Excellent": "excellent",
@@ -185,6 +190,7 @@ async function loadDashboard() {
     kpiGrid.innerHTML = `<div class="conn-error" style="grid-column: 1 / -1">${err.message}</div>`;
   }
 }
+
 
 let editingSiteId = null; 
 
@@ -564,6 +570,7 @@ function initSiteMap() {
   if (!siteMap) {
     siteMap = L.map(mapEl).setView(DEFAULT_MAP_CENTER, 5);
 
+    
     L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
       {
@@ -576,6 +583,7 @@ function initSiteMap() {
       setMapPin(e.latlng.lat, e.latlng.lng);
     });
 
+   
     drawnItems = new L.FeatureGroup();
     siteMap.addLayer(drawnItems);
 
@@ -598,6 +606,7 @@ function initSiteMap() {
       updateAreaFromLayer(e.layer);
     });
   } else {
+   
     setTimeout(() => siteMap.invalidateSize(), 100);
   }
 }
@@ -665,6 +674,7 @@ function setDefaultBoundary(lat, lon) {
   const rect = L.rectangle(bounds, { color: "#34D399" }).addTo(drawnItems);
   updateAreaFromLayer(rect);
 }
+
 
 function syncMapFromManualCoords() {
   const latVal = parseFloat(document.getElementById("s-lat").value);
@@ -786,3 +796,4 @@ function escapeHtml(str) {
 if (state.token && state.user) {
   showApp();
 }
+

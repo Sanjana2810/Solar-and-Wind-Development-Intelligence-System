@@ -264,6 +264,7 @@ def _run_full_pipeline(req: "SiteCreateRequest"):
     wind = wind_potential(DEFAULT_TURBINE_COUNT, profile)
     score = compute_site_score(profile, solar, wind, req.existing_infrastructure)
     forecast = energy_forecast(solar, wind, score["recommended_technology"], profile)
+    forecast = energy_forecast(solar, wind, score["recommended_technology"])
     deployment = deployment_plan(req.land_area_m2, score["recommended_technology"], solar, wind)
     return profile, solar, wind, score, forecast, deployment
 
