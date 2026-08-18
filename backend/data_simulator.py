@@ -1,4 +1,3 @@
-
 import math
 from dataclasses import dataclass, asdict, field
 
@@ -11,68 +10,30 @@ OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 _profile_cache: dict = {}
 
 
-_profile_cache: dict = {}
-
-
 @dataclass
 class EnvironmentalProfile:
     solar_irradiance_kwh_m2_day: float   
     peak_sun_hours: float
-    cloud_cover_pct: float          
-        
+    cloud_cover_pct: float              
     avg_temperature_c: float      
-     
     annual_rainfall_mm: float      
-    
     avg_wind_speed_ms: float      
-    
     wind_direction_deg: float      
-    
     wind_direction_compass: str     
-     
     wind_power_density_w_m2: float
     monthly_solar_irradiance_kwh_m2_day: list
-  
     monthly_wind_speed_hub_ms: list     
-        
     turbulence_intensity_pct: float
-    elevation_m: float        
-                        
-    land_slope_deg: float      
-               
-    land_cover_type: str      
-               
-    distance_to_road_km: float    
-      
+    elevation_m: float                    
+    land_slope_deg: float               
+    land_cover_type: str                
+    distance_to_road_km: float      
     distance_to_transmission_km: float  
     distance_to_substation_km: float    
-    in_protected_zone: bool      
-       
-    in_urban_area: bool      
-                            
-    land_ownership: str      
-                            
-    data_sources: dict = field(default_factory=dict)
-
-    cloud_cover_pct: float              
-    avg_temperature_c: float             
-    annual_rainfall_mm: float            
-    avg_wind_speed_ms: float            
-    wind_direction_deg: float           
-    wind_direction_compass: str         
-    wind_power_density_w_m2: float
-    turbulence_intensity_pct: float
-    elevation_m: float                   
-    land_slope_deg: float              
-    land_cover_type: str                
-    distance_to_road_km: float           
-    distance_to_transmission_km: float   
-    distance_to_substation_km: float     
-    in_protected_zone: bool              
+    in_protected_zone: bool             
     in_urban_area: bool                 
-    land_ownership: str                  
+    land_ownership: str                 
     data_sources: dict = field(default_factory=dict)
-
 
 
 def _fetch_nasa_power(lat: float, lon: float) -> dict:
@@ -105,7 +66,6 @@ def _fetch_nasa_power(lat: float, lon: float) -> dict:
         abbr_keys = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
         abbr_result = [values.get(k) if values.get(k) not in (-999, None) else None for k in abbr_keys]
         return abbr_result
-
     
     wd_values = param_data.get("WD10M", {})
     wind_direction = wd_values.get("ANN") if wd_values.get("ANN") not in (-999, None) else None
@@ -120,8 +80,6 @@ def _fetch_nasa_power(lat: float, lon: float) -> dict:
         "solar_irradiance_monthly": monthly("ALLSKY_SFC_SW_DWN"),
         "wind_speed_10m_monthly": monthly("WS10M"),
     }
-
-    
 
 
 def _degrees_to_compass(deg) -> str:
@@ -152,7 +110,6 @@ def _fetch_elevation_and_slope(lat: float, lon: float):
     return center, max(slope_ns, slope_ew)
 
 
-
 _LAND_COVER_MAP = {
     ("landuse", "forest"): "Forest/Woodland",
     ("natural", "wood"): "Forest/Woodland",
@@ -181,15 +138,15 @@ def _overpass_query(lat: float, lon: float) -> list:
     query = f"""
     [out:json][timeout:25];
     (
-      way["highway"](around:15000,{lat},{lon});
-      way["power"="line"](around:15000,{lat},{lon});
-      node["power"="substation"](around:15000,{lat},{lon});
-      way["power"="substation"](around:15000,{lat},{lon});
-      nwr["boundary"="protected_area"](around:15000,{lat},{lon});
-      nwr["leisure"="nature_reserve"](around:15000,{lat},{lon});
-      nwr["landuse"="residential"](around:5000,{lat},{lon});
-      nwr["natural"](around:600,{lat},{lon});
-      nwr["landuse"](around:600,{lat},{lon});
+       way["highway"](around:15000,{lat},{lon});
+       way["power"="line"](around:15000,{lat},{lon});
+       node["power"="substation"](around:15000,{lat},{lon});
+       way["power"="substation"](around:15000,{lat},{lon});
+       nwr["boundary"="protected_area"](around:15000,{lat},{lon});
+       nwr["leisure"="nature_reserve"](around:15000,{lat},{lon});
+       nwr["landuse"="residential"](around:5000,{lat},{lon});
+       nwr["natural"](around:600,{lat},{lon});
+       nwr["landuse"](around:600,{lat},{lon});
     );
     out center;
     """
@@ -270,18 +227,10 @@ def get_environmental_profile(lat: float, lon: float, land_ownership: str = "Pri
             "wind_speed_10m_monthly": [None] * 12,
         }
         sources["Solar / Wind / Climate / Wind Direction / Seasonal"] = "NASA POWER API unavailable - latitude-based fallback estimate used"
-
-
-    hub_wind_speed = power["wind_speed_10m"] * (80 / 10) ** 0.14
-
-      
-        
         sources["Solar / Wind / Climate / Wind Direction"] = "NASA POWER API unavailable - latitude-based fallback estimate used"
 
-  
     hub_wind_speed = power["wind_speed_10m"] * (80 / 10) ** 0.14
 
-   
     try:
         elevation, slope = _fetch_elevation_and_slope(lat, lon)
         sources["Elevation / Slope"] = "Open-Meteo Elevation API (live, Copernicus DEM)"
@@ -338,8 +287,6 @@ def get_environmental_profile(lat: float, lon: float, land_ownership: str = "Pri
         monthly_solar_irradiance_kwh_m2_day=power.get("solar_irradiance_monthly", [None] * 12),
         monthly_wind_speed_hub_ms=[round(v, 2) if v is not None else None for v in monthly_hub_wind],
         turbulence_intensity_pct=12.0,
-
-        turbulence_intensity_pct=12.0,  
         elevation_m=round(elevation, 1),
         land_slope_deg=round(slope, 2),
         land_cover_type=land_cover,
@@ -355,8 +302,6 @@ def get_environmental_profile(lat: float, lon: float, land_ownership: str = "Pri
     _profile_cache[cache_key] = profile
     return profile
 
-def profile_to_dict(profile: EnvironmentalProfile) -> dict:
-    return asdict(profile)
 
 def profile_to_dict(profile: EnvironmentalProfile) -> dict:
     return asdict(profile)
