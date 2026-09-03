@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Solar & Wind Deployment Intelligence</title>
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solar & Wind Deployment Intelligence</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
 </head>
 <body>
-
- 
+  <!-- Authentication View -->
   <div id="auth-view" class="auth-wrap">
     <div class="auth-card">
       <div class="brand">
@@ -51,7 +50,7 @@
     </div>
   </div>
 
-  
+  <!-- Main Application View -->
   <div id="app-view" class="app-wrap hidden">
     <aside class="sidebar">
       <div class="brand-mini">
@@ -71,7 +70,7 @@
     </aside>
 
     <main class="main">
-     
+      <!-- Dashboard View -->
       <section id="view-dashboard" class="view active">
         <h2>Project Overview</h2>
         <div class="kpi-grid" id="kpi-grid"></div>
@@ -87,7 +86,7 @@
         </div>
       </section>
 
-   
+      <!-- Projects View -->
       <section id="view-projects" class="view">
         <h2>Projects</h2>
         <form id="project-form" class="analyze-form">
@@ -106,7 +105,7 @@
         <div id="projects-list"></div>
       </section>
 
-    
+      <!-- Register New Site View -->
       <section id="view-new-site" class="view">
         <div class="section-header">
           <h2 id="site-form-heading">Register New Site</h2>
@@ -179,7 +178,7 @@
         <div id="site-result"></div>
       </section>
 
-   
+      <!-- All Sites View -->
       <section id="view-sites" class="view">
         <div class="section-header">
           <h2>All Sites</h2>
@@ -189,7 +188,14 @@
         <table class="sites-table">
           <thead>
             <tr>
-              <th>Site Name</th><th>Project</th><th>Region</th><th>Score</th><th>Category</th><th>Tech</th><th>Created</th><th></th>
+              <th>Site Name</th>
+              <th>Project</th>
+              <th>Region</th>
+              <th>Score</th>
+              <th>Category</th>
+              <th>Tech</th>
+              <th>Created</th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="sites-table-body"></tbody>
@@ -198,6 +204,7 @@
     </main>
   </div>
 
+  <!-- Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
   <script src="app.js"></script>

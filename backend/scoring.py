@@ -1,5 +1,3 @@
-
-
 from data_simulator import EnvironmentalProfile
 
 PANEL_EFFICIENCY = 0.20          
@@ -27,7 +25,6 @@ def _wind_speed_to_capacity_factor(v: float) -> float:
 
 
 def solar_potential(land_area_m2: float, profile: EnvironmentalProfile) -> dict:
-    
     capacity_factor = min(
         0.95, (profile.peak_sun_hours / 24) * PERFORMANCE_RATIO * (1 - profile.cloud_cover_pct / 250)
     )
@@ -48,7 +45,6 @@ def solar_potential(land_area_m2: float, profile: EnvironmentalProfile) -> dict:
 
 
 def wind_potential(num_turbines: int, profile: EnvironmentalProfile) -> dict:
-  
     v = profile.avg_wind_speed_ms
     capacity_factor = _wind_speed_to_capacity_factor(v)
 
@@ -64,10 +60,9 @@ def wind_potential(num_turbines: int, profile: EnvironmentalProfile) -> dict:
     }
 
 
-
 def _resource_score(solar: dict, wind: dict) -> float:
     solar_score = min(100, solar["capacity_factor_pct"] * (100 / 30))  
-    wind_score = min(100, wind["capacity_factor_pct"] * (100 / 45))     
+    wind_score = min(100, wind["capacity_factor_pct"] * (100 / 45))    
     return max(solar_score, wind_score) * 0.6 + min(solar_score, wind_score) * 0.4
 
 
@@ -88,7 +83,7 @@ def _infrastructure_score(profile: EnvironmentalProfile, existing_infrastructure
         + prox(profile.distance_to_transmission_km) * 0.4
         + prox(profile.distance_to_substation_km) * 0.3
     )
-    
+   
     bonus = 0
     if existing_infrastructure:
         bonus = 10 if "Road + Grid" in existing_infrastructure else 6
@@ -98,6 +93,7 @@ def _infrastructure_score(profile: EnvironmentalProfile, existing_infrastructure
 LAND_COVER_IMPACT_PENALTY = {
     "Forest/Woodland": 20,       
     "Wetland/Water": 40,         
+    "Farmland": 12,              
     "Grassland": 6,
     "Scrubland/Barren": 2,       
     "Urban/Developed": 15,
@@ -134,7 +130,6 @@ def suitability_category(score: float) -> str:
 
 
 def investment_priority(overall_score: float, economic_score: float) -> str:
-   
     if overall_score >= 80 and economic_score >= 70:
         return "High Priority"
     if overall_score >= 60:
@@ -185,28 +180,47 @@ def compute_site_score(
     }
 
 
+AVG_HOUSEHOLD_KWH_YEAR = 3500     
 
-AVG_HOUSEHOLD_KWH_YEAR = 3500      
-
-
-SEASONAL_SHARE = {
-    "Q1 (Jan-Mar)": 0.22,
-    "Q2 (Apr-Jun)": 0.28,
-    "Q3 (Jul-Sep)": 0.27,
-    "Q4 (Oct-Dec)": 0.23,
+_QUARTERS = {
+    "Q1 (Jan-Mar)": (0, 1, 2),
+    "Q2 (Apr-Jun)": (3, 4, 5),
+    "Q3 (Jul-Sep)": (6, 7, 8),
+    "Q4 (Oct-Dec)": (9, 10, 11),
 }
 
 
-def energy_forecast(solar: dict, wind: dict, recommended_technology: str) -> dict:
-   
+def _monthly_weights(monthly_values: list) -> list:
+    total = sum(v for v in monthly_values if v is not None)
+    if not total:
+        return [1 / 12] * 12
+    return [(v if v is not None else total / 12) / total for v in monthly_values]
+
+
+def energy_forecast(solar: dict, wind: dict, recommended_technology: str, profile: EnvironmentalProfile) -> dict:
+    solar_weights = _monthly_weights(profile.monthly_solar_irradiance_kwh_m2_day)
+    wind_monthly_cf = [
+        _wind_speed_to_capacity_factor(v) if v is not None else None
+        for v in profile.monthly_wind_speed_hub_ms
+    ]
+    wind_weights = _monthly_weights(wind_monthly_cf)
+
+    def quarterly(annual_value, weights):
+        return {q: round(annual_value * sum(weights[i] for i in idxs)) for q, idxs in _QUARTERS.items()}
+
     if recommended_technology == "Solar":
         annual_kwh = solar["expected_energy_output_kwh_year"]
+        seasonal_kwh = quarterly(annual_kwh, solar_weights)
     elif recommended_technology == "Wind":
         annual_kwh = wind["expected_annual_energy_production_kwh"]
+        seasonal_kwh = quarterly(annual_kwh, wind_weights)
     else:  
-        annual_kwh = solar["expected_energy_output_kwh_year"] + wind["expected_annual_energy_production_kwh"]
-
-    seasonal_kwh = {q: round(annual_kwh * share) for q, share in SEASONAL_SHARE.items()}
+        solar_annual = solar["expected_energy_output_kwh_year"]
+        wind_annual = wind["expected_annual_energy_production_kwh"]
+        annual_kwh = solar_annual + wind_annual
+        solar_seasonal = quarterly(solar_annual, solar_weights)
+        wind_seasonal = quarterly(wind_annual, wind_weights)
+        seasonal_kwh = {q: solar_seasonal[q] + wind_seasonal[q] for q in _QUARTERS}
 
     return {
         "recommended_technology": recommended_technology,
@@ -216,13 +230,10 @@ def energy_forecast(solar: dict, wind: dict, recommended_technology: str) -> dic
     }
 
 
-
-
 SOLAR_KW_INSTALLED_PER_M2 = 0.15  
 
 
 def deployment_plan(land_area_m2: float, recommended_technology: str, solar: dict, wind: dict) -> dict:
-    """9. Deployment Optimization Engine — capacity planning + expansion guidance."""
     if recommended_technology == "Solar":
         capacity_kw = land_area_m2 * SOLAR_KW_INSTALLED_PER_M2
     elif recommended_technology == "Wind":

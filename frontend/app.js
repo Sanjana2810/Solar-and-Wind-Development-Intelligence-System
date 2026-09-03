@@ -524,6 +524,7 @@ async function loadSitesTable() {
 
 async function editSite(id) {
   const site = await api(`/api/sites/${id}`);
+
   document.querySelectorAll(".nav-btn").forEach((b) => b.classList.remove("active"));
   document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
   document.querySelector('[data-view="new-site"]').classList.add("active");
@@ -568,6 +569,7 @@ function initSiteMap() {
 
   if (!siteMap) {
     siteMap = L.map(mapEl).setView(DEFAULT_MAP_CENTER, 5);
+
     
     L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
@@ -650,6 +652,16 @@ function setMapPin(lat, lon) {
   setDefaultBoundary(lat, lon);
 }
 
+async function suggestInfrastructure(lat, lon) {
+  try {
+    const result = await api("/api/infrastructure-suggestion", {
+      query: { latitude: lat, longitude: lon },
+    });
+    document.getElementById("s-infra").value = result.suggested_infrastructure || "";
+  } catch (err) {
+    
+  }
+}
 
 function setDefaultBoundary(lat, lon) {
   if (!drawnItems) return;
@@ -784,3 +796,4 @@ function escapeHtml(str) {
 if (state.token && state.user) {
   showApp();
 }
+
